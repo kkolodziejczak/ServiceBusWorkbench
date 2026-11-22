@@ -235,3 +235,22 @@ dotnet tools/ServiceBusWorkbench.ReadmeScreenshot/bin/Debug/net10.0-windows/Serv
 - The hosted-smoke fallback uses the existing strict tag and workflow-dispatch inputs `use_manual_launch_smoke_proof` and `manual_launch_smoke_proof_reference`. The `manual-launch-smoke` GitHub Environment must have required reviewers. This fallback skips only hosted launch proof and still creates only a draft.
 - The README screenshot is brought up to date before tagging (DEC-060). On a clean `master` level with origin, run `.\scripts\Sync-ReleaseScreenshot.ps1` before `.\scripts\Push-ReleaseTag.ps1`. It runs `.github/workflows/update-readme-screenshot.yml` with `branch=master`. The workflow builds the deterministic screenshot generator from that commit, validates the PNG, and pushes a dedicated automation branch only when the rendered UI changed. The script then opens the pull request with the maintainer's `gh`, waits for its checks, merges it and fast-forwards `master`. It checks that `master` is now the captured commit plus the screenshot and nothing else. Tag the resulting commit. It stops without dispatching anything if an earlier screenshot pull request into `master` is still open; finish or close that one first.
 - Publishing a release still runs the same workflow for the published tag as a safety net. Normally it finds no change. If it does push a branch, it writes an `Open pull request` link to the workflow summary for a maintainer to open and merge. Repository-wide permission for GitHub Actions to create or approve pull requests must remain disabled. Do not replace the README screenshot manually.
+
+### Starting the approval for the owner
+
+<!-- Shared with every repository that signs through gh-release-signing; keep it identical to the
+     copy in that repository's README ("Instructions for agents"). -->
+When a run waits for signing, start the approval script for the owner instead of asking them to
+run it. Open it in its own window, from this repository's folder, so the owner can answer it:
+
+```powershell
+Start-Process powershell.exe -WorkingDirectory (Get-Location) -ArgumentList '-NoExit', '-Command', 'gh release-signing approve -Tag vX.Y.Z'
+```
+
+- Pass `-RunId <id>` after a rerun, and `-Workflow <file>` when the calling workflow is not
+  `release.yml`.
+- If `gh extension list` does not show `release-signing`, run `Approve-ReleaseSigning.ps1` from a
+  local clone of gh-release-signing instead (`-NoExit -ExecutionPolicy Bypass -File <path> …`),
+  still with this repository's folder as the working directory.
+- Never answer its prompts or type the code yourself. Tell the owner the window is open, then wait
+  for the run to finish in the background and report its result.
